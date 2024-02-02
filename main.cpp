@@ -8,13 +8,14 @@
 using namespace std;
 
 int correctInput();
-void add(Student* &s, vector<Student*> &v, Node** (&nodeArray)[100]);
+void add(Student* &s, vector<Student*> &v, Node** &nodeArray, int size);
 void print(vector<Student*> v);
 void del(vector<Student*> &v);
-void hashFunction(Node* (&hashTable)[100], Node* &inputNode);
+void hashFunction(Node** &hashTable, int &size);
 
 int main() {
   Node** hashTable = new Node* [100];
+  int size = 100;
   for (int i = 0; i < 100; i++) {
     hashTable[i] == NULL;
   }
@@ -25,7 +26,7 @@ int main() {
       //If the user wants to add a new student
       if (option == 1) {
 	Student *student = new Student();
-	add(student, studentList, hashTable);
+	add(student, studentList, hashTable, size);
       }
       // Runs through the vector and prints out the students.
       else if (option == 2) {
@@ -69,7 +70,7 @@ int correctInput() {
   return -1;
 }
 
-void add(Student* &s, vector<Student*> &v, Node** (&hashTable)[100]) {
+void add(Student* &s, vector<Student*> &v, Node** &hashTable, int size) {
   // Prompt first name
   cout << "Please enter a first name." << endl;
   char input[20];
@@ -112,8 +113,19 @@ void add(Student* &s, vector<Student*> &v, Node** (&hashTable)[100]) {
   v.push_back(s);
 
   Node* inputNode = new Node(s);
-  hashFunction(hashTable, inputNode);
-    
+  int location = (inputNode->getStudent()->getID())%100;
+  if (hashTable[location] == NULL) {
+    hashTable[location] = inputNode;
+  }
+  else if (hashTable[location]->getNext() == NULL) {
+    hashTable[location]->getNext()->setNext(inputNode);
+  }
+  else if (hashTable[location]->getNext()->getNext() == NULL) {
+    hashTable[location]->getNext()->getNext()->setNext(inputNode);
+  }
+  else {
+    hashFunction(hashTable, size);
+  }
   cout << endl;
 }
 
@@ -145,10 +157,31 @@ void del(vector<Student*> &v) {
   cout << endl;
 }
 
-// Fixed array declaration in prototype with help from MiiNiPaa at https://cplusplus.com/forum/beginner/167788/
-void hashFunction(Node** (&hashTable)[100], Node* &inputNode) {
-  int location = (inputNode->getStudent()->getID())%100;
-  if (hashTable[location] == NULL) {
-    hashTable[location] = inputNode;
+void hashFunction(Node** &hashTable, int &size) {
+  Node** tempHashTable = hashTable;
+  hashTable = new Node* [size*2];
+  int newLocation;
+  for (int i = 0; i < size; i++) {
+    if (tempHashTable[i]->getNext()->getNext() != NULL) {
+      newLocation = (tempHashTable[i]->getStudent()->getID())%200;
+      hashTable[newLocation] = tempHashTable[i];
+      
+      newLocation = (tempHashTable[i]->getNext()->getStudent()->getID())%200;
+      hashTable[newLocation] = tempHashTable[i]->getNext();
+
+      newLocation = (tempHashTable[i]->getNext()->getNext()->getStudent()->getID())%200;
+      hashTable[newLocation] = tempHashTable[i]->getNext()->getNext();
+    }
+    else if (hashTable[i]->getNext() != NULL) {
+      newLocation = (tempHashTable[i]->getStudent()->getID())%200;
+      hashTable[newLocation] = tempHashTable[i];
+      
+      newLocation = (tempHashTable[i]->getNext()->getStudent()->getID())%200;
+      hashTable[newLocation] = tempHashTable[i]->getNext();
+    }
+    else if (hashTable[i] != NULL) {
+      newLocation = (tempHashTable[i]->getStudent()->getID())%200;
+      hashTable[newLocation] = tempHashTable[i];
+    }
   }
 }
