@@ -8,9 +8,9 @@
 using namespace std;
 
 int correctInput();
-void add(Student* &s, vector<Student*> &v, Node** &nodeArray, int size);
-void print(vector<Student*> v);
-void del(vector<Student*> &v);
+void add(Student* &s, vector<Student*> &v, Node** &nodeArray, int &size);
+void print(Node** &hashTable, int &size);
+void del(Node** &hashTable, int &size);
 void hashFunction(Node** &hashTable, int &size);
 
 int main() {
@@ -30,11 +30,11 @@ int main() {
       }
       // Runs through the vector and prints out the students.
       else if (option == 2) {
-	print(studentList);
+	print(hashTable, size);
       }
       // Remove a student from the student list based on their student ID.
       else if (option == 3) {
-	del(studentList);
+	del(hashTable, size);
       }
       // Quit the program
       else if (option == 4) {
@@ -70,7 +70,7 @@ int correctInput() {
   return -1;
 }
 
-void add(Student* &s, vector<Student*> &v, Node** &hashTable, int size) {
+void add(Student* &s, vector<Student*> &v, Node** &hashTable, int &size) {
   // Prompt first name
   cout << "Please enter a first name." << endl;
   char input[20];
@@ -114,74 +114,93 @@ void add(Student* &s, vector<Student*> &v, Node** &hashTable, int size) {
 
   Node* inputNode = new Node(s);
   int location = (inputNode->getStudent()->getID())%100;
-  if (hashTable[location] == NULL) {
-    hashTable[location] = inputNode;
+  bool hashing = true;
+  while (hashing == true) {
+    if (hashTable[location] == NULL) {
+      cout << "first" << endl;
+      hashTable[location] = inputNode;
+      hashing = false;
+    }
+    else if (hashTable[location]->getNext() == NULL) {
+      cout << "second" << endl;
+      hashTable[location]->setNext(inputNode);
+      hashing = false;
+    }
+    else if (hashTable[location]->getNext()->getNext() == NULL) {
+      cout << "third" << endl;
+      (hashTable[location]->getNext())->setNext(inputNode);
+      hashing = false;
+    }
+    else {
+      hashFunction(hashTable, size);
+    }
   }
-  else if (hashTable[location]->getNext() == NULL) {
-    hashTable[location]->getNext()->setNext(inputNode);
-  }
-  else if (hashTable[location]->getNext()->getNext() == NULL) {
-    hashTable[location]->getNext()->getNext()->setNext(inputNode);
-  }
-  else {
-    hashFunction(hashTable, size);
+  cout << "size: " << size << endl;
+  cout << endl;
+}
+
+void print(Node** &hashTable, int &size) {
+  for (int i = 0; i < size; i++) {
+    if (hashTable[i] != NULL) {
+      if (hashTable[i]->getNext() != NULL) {
+	if (hashTable[i]->getNext()->getNext() != NULL) {
+	  cout << hashTable[i]->getStudent()->getFirstName() << " " << hashTable[i]->getStudent()->getLastName() << ", " << hashTable[i]->getStudent()->getID() << " " << hashTable[i]->getStudent()->getGPA() << endl;
+	  cout << hashTable[i]->getNext()->getStudent()->getFirstName() << " " << hashTable[i]->getNext()->getStudent()->getLastName() << ", " << hashTable[i]->getNext()->getStudent()->getID() << " " << hashTable[i]->getNext()->getStudent()->getGPA() << endl;
+	  cout << hashTable[i]->getNext()->getNext()->getStudent()->getFirstName() << " " << hashTable[i]->getNext()->getNext()->getStudent()->getLastName() << ", " << hashTable[i]->getNext()->getNext()->getStudent()->getID() << " " << hashTable[i]->getNext()->getNext()->getStudent()->getGPA() << endl;
+	}
+	else {
+	  cout << hashTable[i]->getStudent()->getFirstName() << " " << hashTable[i]->getStudent()->getLastName() << ", " << hashTable[i]->getStudent()->getID() << " " << hashTable[i]->getStudent()->getGPA() << endl;
+	  cout << hashTable[i]->getNext()->getStudent()->getFirstName() << " " << hashTable[i]->getNext()->getStudent()->getLastName() << ", " << hashTable[i]->getNext()->getStudent()->getID() << " " << hashTable[i]->getNext()->getStudent()->getGPA() << endl;
+	}
+      }
+      else {
+	cout << hashTable[i]->getStudent()->getFirstName() << " " << hashTable[i]->getStudent()->getLastName() << ", " << hashTable[i]->getStudent()->getID() << " " << hashTable[i]->getStudent()->getGPA() << endl;
+      }
+    }
   }
   cout << endl;
 }
 
-void print(vector<Student*> v) {
-  cout << "Here's a list of the current students:" << endl;
-  // Got help with iterators & dereferencing from Lucas Johnson 
-  for (vector<Student*>::iterator iter = v.begin(); iter < v.end(); iter++) {
-    // Output each student's information. Precision code from geeksforgeeks.org
-    cout << (*iter)->firstName << " " << (*iter)->lastName << ", " << fixed << setprecision(2) << (*iter)->ID << ", " << (*iter)->GPA << endl;
-  }
-  cout << endl;
-}
-
-void del(vector<Student*> &v) {
+void del(Node** &hashTable, int &size) {
   cout << "Please enter the student ID of the student you want to remove from the list." << endl;
   int intInput;
   cin >> intInput;
   cin.get();
-  for (vector<Student*>::iterator iter = v.begin(); iter != v.end(); iter++) {
-    // If any id matches with the inputted id, remove that student from the list.
-    if (intInput == (*iter)->ID) {
-      // Remove the pointer from the heap 
-      delete *iter;
-      // Remove the element from the vector
-      v.erase(iter);
-      return;
-    }
-  }
-  cout << endl;
 }
 
 void hashFunction(Node** &hashTable, int &size) {
   Node** tempHashTable = hashTable;
-  hashTable = new Node* [size*2];
+  size *= 2;
+  hashTable = new Node* [size];
+  for (int i = 0; i < size; i++) {
+    hashTable[i] = NULL;
+  }
   int newLocation;
   for (int i = 0; i < size; i++) {
-    if (tempHashTable[i]->getNext()->getNext() != NULL) {
-      newLocation = (tempHashTable[i]->getStudent()->getID())%200;
-      hashTable[newLocation] = tempHashTable[i];
-      
-      newLocation = (tempHashTable[i]->getNext()->getStudent()->getID())%200;
-      hashTable[newLocation] = tempHashTable[i]->getNext();
-
-      newLocation = (tempHashTable[i]->getNext()->getNext()->getStudent()->getID())%200;
-      hashTable[newLocation] = tempHashTable[i]->getNext()->getNext();
-    }
-    else if (hashTable[i]->getNext() != NULL) {
-      newLocation = (tempHashTable[i]->getStudent()->getID())%200;
-      hashTable[newLocation] = tempHashTable[i];
-      
-      newLocation = (tempHashTable[i]->getNext()->getStudent()->getID())%200;
-      hashTable[newLocation] = tempHashTable[i]->getNext();
-    }
-    else if (hashTable[i] != NULL) {
-      newLocation = (tempHashTable[i]->getStudent()->getID())%200;
-      hashTable[newLocation] = tempHashTable[i];
+    if (hashTable[i] != NULL) {
+      if (hashTable[i]->getNext() != NULL) {
+	if (hashTable[i]->getNext()->getNext() != NULL) {
+	  newLocation = (tempHashTable[i]->getStudent()->getID())%(size);
+	  hashTable[newLocation] = tempHashTable[i];
+	  
+	  newLocation = (tempHashTable[i]->getNext()->getStudent()->getID())%(size);
+	  hashTable[newLocation]->setNext(tempHashTable[i]->getNext());
+	  
+	  newLocation = (tempHashTable[i]->getNext()->getNext()->getStudent()->getID())%(size);
+	  (hashTable[newLocation]->getNext())->setNext(tempHashTable[i]->getNext()->getNext());
+	}
+	else {
+	  newLocation = (tempHashTable[i]->getStudent()->getID())%(size);
+	  hashTable[newLocation] = tempHashTable[i];
+	  
+	  newLocation = (tempHashTable[i]->getNext()->getStudent()->getID())%(size);
+	  hashTable[newLocation]->setNext(tempHashTable[i]->getNext());
+	}
+      }
+      else {
+	newLocation = (tempHashTable[i]->getStudent()->getID())%(size);
+	hashTable[newLocation] = tempHashTable[i];
+      }
     }
   }
 }
