@@ -12,6 +12,7 @@ void add(Student* &s, vector<Student*> &v, Node** &nodeArray, int &size);
 void print(Node** &hashTable, int &size);
 void del(Node** &hashTable, int &size);
 void hashFunction(Node** &hashTable, int &size);
+void addTable (Node** &hashTable, Node* &inputNode, int index);
 
 int main() {
   Node** hashTable = new Node* [100];
@@ -161,64 +162,49 @@ void del(Node** &hashTable, int &size) {
   cin.get();
 }
 
+// With help from Neel Madala on rehashing
 void hashFunction(Node** &hashTable, int &size) {
-  Node** tempHashTable = hashTable;
   size *= 2;
-  hashTable = new Node* [size];
+  Node** tempHashTable = new Node* [size];
   for (int i = 0; i < size; i++) {
-    hashTable[i] = NULL;
+    tempHashTable[i] = NULL;
   }
   int newLocation;
   for (int i = 0; i < size/2; i++) {
-    cout << i;
-    if (tempHashTable[i] != NULL) {
-      newLocation = (tempHashTable[i]->getStudent()->getID())%(size);
-      if (hashTable[newLocation] == NULL) {
-	hashTable[newLocation] = tempHashTable[i];
-	hashTable[newLocation]->setNext(NULL);
+    if (hashTable[i] != NULL) {
+      int index1 = (hashTable[i]->getStudent()->getID())%size;
+      Node* temp1 = hashTable[i];
+      if (hashTable[i]->getNext() != NULL) {
+	int index2 = (hashTable[i]->getNext()->getStudent()->getID())%size;
+	Node* temp2 = hashTable[i];
+	if (hashTable[i]->getNext()->getNext() != NULL) {
+	  int index3 = (hashTable[i]->getNext()->getNext()->getStudent()->getID())%size;
+	  Node* temp3 = hashTable[i]->getNext()->getNext();
+	  temp3->setNext(NULL);
+	  addTable(tempHashTable, temp3, index3);
+	}
+	temp2->setNext(NULL);
+	cout << "does b add" << endl;
+	addTable(tempHashTable, temp2, index2);
       }
-      else if (hashTable[newLocation]->getNext() == NULL) {
-	hashTable[newLocation]->setNext(tempHashTable[i]);
-	hashTable[newLocation]->getNext()->setNext(NULL);
-      }
-      else if (hashTable[newLocation]->getNext()->getNext() == NULL) {
-	hashTable[newLocation]->getNext()->setNext(tempHashTable[i]);
-	hashTable[newLocation]->getNext()->getNext()->setNext(NULL);
-      }
+      temp1->setNext(NULL);
+      addTable(tempHashTable, temp1, index1);
     }
-    if (tempHashTable[i] != NULL && tempHashTable[i]->getNext() != NULL) {
-      cout << "rah";
-      newLocation = (tempHashTable[i]->getNext()->getStudent()->getID())%(size);
-      if (hashTable[newLocation] == NULL) {
-	cout << "rah2";
-	hashTable[newLocation] = tempHashTable[i]->getNext();
-	hashTable[newLocation]->setNext(NULL);
-      }
-      else if (hashTable[newLocation]->getNext() == NULL) {
-	cout << "rah3";
-	hashTable[newLocation]->setNext(tempHashTable[i]->getNext());
-	hashTable[newLocation]->getNext()->setNext(NULL);
-      }
-      else if (hashTable[newLocation]->getNext()->getNext() == NULL) {
-	cout << "rah4";
-	hashTable[newLocation]->getNext()->setNext(tempHashTable[i]->getNext());
-	hashTable[newLocation]->getNext()->getNext()->setNext(NULL);
-      }
-    }
-    if (tempHashTable[i] != NULL && tempHashTable[i]->getNext() != NULL && tempHashTable[i]->getNext()->getNext() != NULL) {
-      newLocation = (tempHashTable[i]->getNext()->getNext()->getStudent()->getID())%(size);
-      if (hashTable[newLocation] == NULL) {
-	hashTable[newLocation] = tempHashTable[i]->getNext()->getNext();
-	hashTable[newLocation]->setNext(NULL);
-      }
-      else if (hashTable[newLocation]->getNext() == NULL) {
-	hashTable[newLocation]->setNext(tempHashTable[i]->getNext()->getNext());
-	hashTable[newLocation]->getNext()->setNext(NULL);
-      }
-      else if (hashTable[newLocation]->getNext()->getNext() == NULL) {
-	hashTable[newLocation]->getNext()->setNext(tempHashTable[i]->getNext()->getNext());
-	hashTable[newLocation]->getNext()->getNext()->setNext(NULL);
-      }
-    }
+  }
+  delete[] hashTable;
+  hashTable = tempHashTable;
+}
+
+
+void addTable(Node** &hashTable, Node* &inputNode, int index) {
+  if (hashTable[index] == NULL) {
+    cout << inputNode->getStudent()->getFirstName() << endl;
+    hashTable[index] = inputNode;
+  }
+  else if (hashTable[index]->getNext() == NULL) {
+    hashTable[index]->setNext(inputNode);
+  }
+  else if (hashTable[index]->getNext()->getNext() == NULL) {
+    hashTable[index]->getNext()->setNext(inputNode);
   }
 }
