@@ -1,6 +1,6 @@
-/* 
- *
- *
+/* This program is essentially student list, but with a hash table (array with linked lists in each index) 
+ * Date: 2/12/24
+ * Author: Roger Li
  */ 
 
 
@@ -22,9 +22,10 @@ void print(Node** &hashTable, int &size);
 void del(Node** &hashTable, int &size);
 void hashFunction(Node** &hashTable, int &size);
 void addTable (Node** &hashTable, Node* &inputNode, int index, int &size);
-
+void deleteNode(Node* &head, Node* cur, Node* prev, int ID);
 
 int main() {
+  // Initialize hash table
   Node** hashTable = new Node* [100];
   int size = 100;
   for (int i = 0; i < 100; i++) {
@@ -38,12 +39,14 @@ int main() {
     firstNamesArr[i] = new char [20];
     lastNamesArr[i] = new char [20];
   }
+  // Copy first names from text file into char double pointer
   ifstream firstNames("firstNames.txt");
   char firstName[20];
   for (int i = 0; i < 25; i++) {
     firstNames.getline(firstName, 20);
     strcpy(firstNamesArr[i], firstName);
   }
+  // Copy last names from text file into char double pointer
   ifstream lastNames("lastNames.txt");
   char lastName[20];
   for (int i = 0; i < 25; i++) {
@@ -60,9 +63,17 @@ int main() {
 	Student *student = new Student();
 	add(student, studentList, hashTable, size);
       }
+      // If the user wants to add random students
       else if (option == 2) {
-	Student *randStudent = new Student();
-	addRandom(firstNamesArr, lastNamesArr, randStudent, studentList, hashTable, size);
+	int studentNum;
+	// Prompt user for the amount of students they would like to add
+        cout << endl << "How many students would you like to add? " << endl;
+	cin >> studentNum;
+	cin.get();
+	for (int i = 0; i < studentNum; i++) {
+	  Student *randStudent = new Student();
+	  addRandom(firstNamesArr, lastNamesArr, randStudent, studentList, hashTable, size);
+	}
       }
       // Runs through the vector and prints out the students.
       else if (option == 3) {
@@ -80,6 +91,7 @@ int main() {
   return 0;
 }
 
+// Make sure that the user inputs a valid command
 int correctInput() {
   bool leaveLoop = false;
   cout << "Enter one of the following options: ADD, ADDRANDOM, PRINT, DELETE, or QUIT (uppercase)" << endl;
@@ -109,6 +121,7 @@ int correctInput() {
   return -1;
 }
 
+// Manually add a student
 void add(Student* &s, vector<Student*> &v, Node** &hashTable, int &size) {
   // Prompt first name
   cout << "Please enter a first name." << endl;
@@ -129,6 +142,7 @@ void add(Student* &s, vector<Student*> &v, Node** &hashTable, int &size) {
     cin >> intInput;
     cin.get();
     int temp = 0;
+    // Make sure the user ID is unique
     for (vector<Student*>::iterator iter = v.begin(); iter < v.end(); iter++) {
       if (intInput == (*iter)->ID) {
         temp++;
@@ -153,20 +167,18 @@ void add(Student* &s, vector<Student*> &v, Node** &hashTable, int &size) {
 
   Node* inputNode = new Node(s);
   bool hashing = true;
+  // Add node to hash table. If a linked list in hash table ever reaches a length more than 3, rehash.
   while (hashing == true) {
     int location = (inputNode->getStudent()->getID())%size;
     if (hashTable[location] == NULL) {
-      cout << "first" << endl;
       hashTable[location] = inputNode;
       hashing = false;
     }
     else if (hashTable[location]->getNext() == NULL) {
-      cout << "second" << endl;
       hashTable[location]->setNext(inputNode);
       hashing = false;
     }
     else if (hashTable[location]->getNext()->getNext() == NULL) {
-      cout << "third" << endl;
       (hashTable[location]->getNext())->setNext(inputNode);
       hashing = false;
     }
@@ -174,83 +186,80 @@ void add(Student* &s, vector<Student*> &v, Node** &hashTable, int &size) {
       hashFunction(hashTable, size);
     }
   }
-    
-  cout << "size: " << size << endl;
-  cout << endl;
 }
 
+// Randomly add a certain amount of students
 void addRandom(char** firstNamesArr, char** lastNamesArr, Student* &randStudent, vector<Student*> &v, Node** &hashTable, int&size) {
-  cout << endl << "How many students would you like to add? " << endl;
-  int studentNum;
-  cin >> studentNum;
-  cin.get();
-  for (int i = 0; i < studentNum; i++) {
-    int randFirst = rand() % 24;
-    int randLast = rand() % 24;
-    strcpy(randStudent->firstName, firstNamesArr[randFirst]);
-    cout << "first name: " << firstNamesArr[randFirst] << endl;
-    strcpy(randStudent->lastName, lastNamesArr[randLast]);
-    cout << "last name: " << lastNamesArr[randLast] << endl;;
-    int randStudentID = 0;
-    int temp = 0;
-    bool correctID = false;
-    while (correctID == false) {
-      for (vector<Student*>::iterator iter = v.begin(); iter < v.end(); iter++) {
-	if (randStudentID == (*iter)->ID) {
-	  temp++;
-	}
-      }
-      if (temp == 0) {
-	randStudent->ID = randStudentID;
-	correctID = true;
-      }
-      else {
-	randStudentID++;
-	temp = 0;
+  int randFirst = rand() % 24;
+  int randLast = rand() % 24;
+  strcpy(randStudent->firstName, firstNamesArr[randFirst]);
+  strcpy(randStudent->lastName, lastNamesArr[randLast]);
+  int randStudentID = 0;
+  int temp = 0;
+  bool correctID = false;
+  // Ensure that user ID is unique
+  while (correctID == false) {
+    for (vector<Student*>::iterator iter = v.begin(); iter < v.end(); iter++) {
+      if (randStudentID == (*iter)->ID) {
+	temp++;
       }
     }
-    float randGPA = (float) (rand() % 401)/100;
-    //cout << fixed << setprecision(2) << randGPA;
-    randStudent->GPA = randGPA;
-    v.push_back(randStudent);
-    
-    Node* randomNode = new Node(randStudent);
-    bool hashing2 = true;
-    while (hashing2 == true) {
-      int location2 = (randomNode->getStudent()->getID())%size;
-      if (hashTable[location2] == NULL) {
-	cout << "first2" << endl;
-	cout << "huh" << endl;
-	cout << randStudent->getLastName();
-	cout << "hi " << randomNode->getStudent()->getLastName();
-	hashTable[location2] = randomNode;
-	hashing2 = false;
-      }
-      else if (hashTable[location2]->getNext() == NULL) {
-	cout << "second" << endl;
-	hashTable[location2]->setNext(randomNode);
-	hashing2 = false;
-      }
-      else if (hashTable[location2]->getNext()->getNext() == NULL) {
-	cout << "third" << endl;
-	(hashTable[location2]->getNext())->setNext(randomNode);
-	hashing2 = false;
-      }
-      else {
-	hashFunction(hashTable, size);
-      }
+    if (temp == 0) {
+      randStudent->ID = randStudentID;
+      correctID = true;
+    }
+    else {
+      randStudentID++;
+      temp = 0;
+    }
+  }
+  float randGPA = (float) (rand() % 401)/100;
+  //cout << fixed << setprecision(2) << randGPA;
+  randStudent->GPA = randGPA;
+  v.push_back(randStudent);
+  
+  
+  Node* randomNode = new Node(randStudent);
+  bool hashing2 = true;
+  // Add node to hash table. If a linked list in hash table ever reaches a length more than 3, rehash.
+  while (hashing2 == true) {
+    int location2 = (randomNode->getStudent()->getID())%size;
+    if (hashTable[location2] == NULL) {	
+      hashTable[location2] = randomNode;
+      hashing2 = false;
+    }
+    else if (hashTable[location2]->getNext() == NULL) {
+      hashTable[location2]->setNext(randomNode);
+      hashing2 = false;
+    }
+    else if (hashTable[location2]->getNext()->getNext() == NULL) {
+      (hashTable[location2]->getNext())->setNext(randomNode);
+      hashing2 = false;
+    }
+    else {
+      hashFunction(hashTable, size);
     }
   }
 }
 
+// Print hash table in order of indices
 void print(Node** &hashTable, int &size) {
   for (int i = 0; i < size; i++) {
     if (hashTable[i] != NULL) {
-      cout << hashTable[i]->getStudent()->getFirstName() << " " << hashTable[i]->getStudent()->getLastName() << ", " << hashTable[i]->getStudent()->getID() << " " << hashTable[i]->getStudent()->getGPA() << endl;
+      cout << "First name: " << hashTable[i]->getStudent()->getFirstName() << endl;
+      cout << "Last name: " << hashTable[i]->getStudent()->getLastName() << endl;
+      cout << "ID: " << hashTable[i]->getStudent()->getID() << endl;
+      cout << "GPA: " << hashTable[i]->getStudent()->getGPA() << endl;
       if (hashTable[i]->getNext() != NULL) {
-	cout << hashTable[i]->getNext()->getStudent()->getFirstName() << " " << hashTable[i]->getNext()->getStudent()->getLastName() << ", " << hashTable[i]->getNext()->getStudent()->getID() << " " << hashTable[i]->getNext()->getStudent()->getGPA() << endl;
+	cout << "First name: " << hashTable[i]->getNext()->getStudent()->getFirstName() << endl;
+	cout << "Last name: " << hashTable[i]->getNext()->getStudent()->getLastName() << endl;
+	cout << "ID: " << hashTable[i]->getNext()->getStudent()->getID() << endl;
+	cout << "GPA: " << hashTable[i]->getNext()->getStudent()->getGPA() << endl;
 	if (hashTable[i]->getNext()->getNext() != NULL) {
-	  cout << hashTable[i]->getNext()->getNext()->getStudent()->getFirstName() << " " << hashTable[i]->getNext()->getNext()->getStudent()->getLastName() << ", " << hashTable[i]->getNext()->getNext()->getStudent()->getID() << " " << hashTable[i]->getNext()->getNext()->getStudent()->getGPA() << endl;
+	  cout << "First name: " << hashTable[i]->getNext()->getNext()->getStudent()->getFirstName() << endl;
+	  cout << "Last name: " << hashTable[i]->getNext()->getNext()->getStudent()->getLastName() << endl;
+	  cout << "ID: " << hashTable[i]->getNext()->getNext()->getStudent()->getID() << endl;
+	  cout << "GPA: " << hashTable[i]->getNext()->getNext()->getStudent()->getGPA() << endl;
 	}
       }
     }
@@ -258,21 +267,27 @@ void print(Node** &hashTable, int &size) {
   cout << endl;
 }
 
+// Delete concept from Vikram Vasudevan & Sophia You
 void del(Node** &hashTable, int &size) {
   cout << "Please enter the student ID of the student you want to remove from the list." << endl;
   int intInput;
   cin >> intInput;
   cin.get();
+  int index = intInput%size;
+  deleteNode(hashTable[index], hashTable[index], hashTable[index], intInput);
 }
 
 // With help from Neel Madala on rehashing
 void hashFunction(Node** &hashTable, int &size) {
+  // Double the size of the hash table
   size *= 2;
+  // Create a new hash table with double the size and fill it with NULLs;
   Node** tempHashTable = new Node* [size];
   for (int i = 0; i < size; i++) {
     tempHashTable[i] = NULL;
   }
   int newLocation;
+  //  Run through every node in old hash table and copy it to the new one.
   for (int i = 0; i < size/2; i++) {
     if (hashTable[i] != NULL) {
       int index1 = (hashTable[i]->getStudent()->getID())%size;
@@ -287,7 +302,6 @@ void hashFunction(Node** &hashTable, int &size) {
 	  addTable(tempHashTable, temp3, index3, size);
 	}
 	temp2->setNext(NULL);
-	cout << "does b add" << endl;
 	addTable(tempHashTable, temp2, index2, size);
       }
       temp1->setNext(NULL);
@@ -295,17 +309,16 @@ void hashFunction(Node** &hashTable, int &size) {
     }
   }
   delete[] hashTable;
+  // Copy new hash table into old
   hashTable = tempHashTable;
 }
 
-
+// Add nodes to hash table
 void addTable(Node** &hashTable, Node* &inputNode, int index, int &size) {
   if (hashTable[index] == NULL) {
-    cout << "adding 1" << inputNode->getStudent()->getFirstName() << endl;
     hashTable[index] = inputNode;
   }
   else if (hashTable[index]->getNext() == NULL) {
-    cout << "adding 2" << inputNode->getStudent()->getFirstName() << endl;
     hashTable[index]->setNext(inputNode);
   }
   else if (hashTable[index]->getNext()->getNext() == NULL) {
@@ -313,5 +326,45 @@ void addTable(Node** &hashTable, Node* &inputNode, int index, int &size) {
   }
   else {
     hashFunction(hashTable, size);
+  }
+}
+
+// Code from my Linked List Part 2 
+void deleteNode(Node* &head, Node* cur, Node* prev, int ID) {
+  // Empty list
+  if (head == NULL) {
+    cout << "List is empty!" << endl;
+  }
+  // Recurses through to the end of the list without finding a student
+  else if (cur == NULL) {
+    cout << "This student does not exist in the Linked List!" << endl;
+  }
+  // Inputted ID matches with a node
+  else if (cur->getStudent()->getID() == ID) {
+    // Matched node is the head and list only contains head
+    if (cur == head && head->getNext() == NULL) {
+      head->~Node();
+      head = NULL;
+    }
+    // Matched node is the head and list doesn't only contain the head
+    else if (cur == head) {
+      Node* tempNode = head->getNext();
+      head->~Node();
+      head = tempNode;
+    }
+    // If the deleted node has a next node, change to previous node's next node to the delete node's next node
+    else if (cur != head && cur->getNext() != NULL) {
+      prev->setNext(cur->getNext());
+      cur->~Node();
+    }
+    // If the deleted node doesn't have a next node 
+    else if (cur != head && cur->getNext() == NULL) {
+      prev->setNext(NULL);
+      cur->~Node();
+    }
+  }
+  // Recursion with current going to the next node
+  else {
+    deleteNode(head, cur->getNext(), cur, ID);
   }
 }
